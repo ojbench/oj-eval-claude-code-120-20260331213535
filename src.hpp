@@ -160,12 +160,12 @@ public:
         // Handle minute wheel tick
         if (minute_tick) {
             bool hour_tick = wheels[1]->tick();
-            cascadeTasks(1);
+            cascadeTasks(1, result);
 
             // Handle hour wheel tick
             if (hour_tick) {
                 wheels[2]->tick();
-                cascadeTasks(2);
+                cascadeTasks(2, result);
             }
         }
 
@@ -205,7 +205,7 @@ private:
         }
     }
 
-    void cascadeTasks(int wheel_index) {
+    void cascadeTasks(int wheel_index, std::vector<Task*>& result) {
         // Move tasks from higher wheel to lower wheel
         TaskNode* current = wheels[wheel_index]->getCurrentSlotTasks();
         TaskNode* next_node = nullptr;
@@ -219,7 +219,20 @@ private:
             current->prev = nullptr;
             current->wheel_index = -1;
 
-            addTaskToWheel(current, current->time);
+            // If time is 0, task should execute immediately
+            if (current->time == 0) {
+                result.push_back(current->task);
+                // Reschedule if periodic
+                size_t period = current->task->getPeriod();
+                if (period > 0 && period <= 24 * 3600) {
+                    current->time = period;
+                    addTaskToWheel(current, period);
+                } else {
+                    delete current;
+                }
+            } else {
+                addTaskToWheel(current, current->time);
+            }
 
             current = next_node;
         }
