@@ -144,7 +144,7 @@ public:
 
             // Reschedule periodic task
             size_t period = current->task->getPeriod();
-            if (period > 0) {
+            if (period > 0 && period <= 24 * 3600) {
                 current->time = period;
                 current->next = nullptr;
                 current->prev = nullptr;
@@ -177,6 +177,7 @@ private:
 
     void addTaskToWheel(TaskNode* node, size_t time) {
         // Determine which wheel and slot to place the task
+        // According to pseudocode: if time / interval <= size then place in this wheel
         if (time / wheels[0]->interval <= wheels[0]->size) {
             // Place in second wheel
             size_t slot = (wheels[0]->current_slot + time / wheels[0]->interval) % wheels[0]->size;
@@ -184,6 +185,7 @@ private:
             node->wheel_index = 0;
         } else if (time / wheels[1]->interval <= wheels[1]->size) {
             // Place in minute wheel
+            // Add offset: time = time + current_slot * interval
             size_t adjusted_time = time + wheels[1]->current_slot * wheels[1]->interval;
             size_t slot = (adjusted_time / wheels[1]->interval) % wheels[1]->size;
             wheels[1]->addTaskNode(node, slot);
@@ -208,7 +210,7 @@ private:
         while (current != nullptr) {
             next_node = current->next;
 
-            // Adjust time based on the interval
+            // Adjust time based on the interval: task.time %= interval
             current->time = current->time % wheels[wheel_index]->interval;
             current->next = nullptr;
             current->prev = nullptr;
