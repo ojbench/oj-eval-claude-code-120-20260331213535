@@ -183,19 +183,22 @@ private:
             size_t slot = (wheels[0]->current_slot + time / wheels[0]->interval) % wheels[0]->size;
             wheels[0]->addTaskNode(node, slot);
             node->wheel_index = 0;
+            node->time = time; // Keep original time
         } else if (time / wheels[1]->interval <= wheels[1]->size) {
             // Place in minute wheel
-            // Add offset: time = time + current_slot * interval
+            // Add offset: adjusted_time = time + current_slot * interval
             size_t adjusted_time = time + wheels[1]->current_slot * wheels[1]->interval;
             size_t slot = (adjusted_time / wheels[1]->interval) % wheels[1]->size;
             wheels[1]->addTaskNode(node, slot);
             node->wheel_index = 1;
+            node->time = adjusted_time; // Store adjusted time for cascading
         } else if (time / wheels[2]->interval <= wheels[2]->size) {
             // Place in hour wheel
             size_t adjusted_time = time + wheels[2]->current_slot * wheels[2]->interval;
             size_t slot = (adjusted_time / wheels[2]->interval) % wheels[2]->size;
             wheels[2]->addTaskNode(node, slot);
             node->wheel_index = 2;
+            node->time = adjusted_time; // Store adjusted time for cascading
         } else {
             // Task is beyond all wheels, delete it
             delete node;
